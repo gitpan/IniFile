@@ -3,7 +3,7 @@
 
 ######################### We start with some black magic to print on failure.
 
-BEGIN { $| = 1; print "1..15\n"; }
+BEGIN { $| = 1; print "1..18\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use IniFile;
 $loaded = 1;
@@ -161,10 +161,10 @@ if (!$ini->exists(['Setup', 'Group', 'Pinata'])
 $ini->save;
 open TMPFILE, "<$tmpfile";
 undef $/;
-my $wholefile = <TMPFILE>;
+$wholefile = <TMPFILE>;
 $/ = "\n";
 close TMPFILE;
-my $shouldbe = <<EOT;
+$shouldbe = <<EOT;
 [Setup]
 MasterProduct=UnrealTournament
 Group=UnrealTournament
@@ -195,3 +195,53 @@ if ($wholefile eq $shouldbe) {
 
 unlink $tmpfile;
 
+# test encoder
+$ini = new IniFile();
+$ini->registry(1);
+$ini->put(['USERS_RIGHTS', 'SzValue', '"MyString"'], -add => 1);
+$ini->put(['USERS_RIGHTS', 'Number', 123], -add => 1);
+$ini->put(['USERS_RIGHTS', 'BigNumber', 0xffffffff], -add => 1);
+$ini->put(['USERS_RIGHTS', 'NotSoBigNumber', 0x80000000], -add => 1);
+$ini->put(['USERS_RIGHTS', 'ListOfNum', (1..9)], -add => 1);
+$ini->put(['USERS_RIGHTS', 'ListOfStr', ('"str1"', '"str2"', '"str3"')],
+	-add => 1);
+$ini->put(['SecondSection', 'Number', 123], -add => 1);
+
+if ($ini->exists(['USERS_RIGHTS', 'SzValue', '"MyString"'])
+	and $ini->exists(['USERS_RIGHTS', 'Number', 'dword:0000007b'])
+	and $ini->exists(['USERS_RIGHTS', 'BigNumber', 'dword:ffffffff'])
+	and $ini->exists(['USERS_RIGHTS', 'NotSoBigNumber', 'dword:80000000'])
+	and $ini->exists(['USERS_RIGHTS', 'ListOfNum',
+		'hex:01,02,03,04,05,06,07,08,09'])
+	and $ini->exists(['USERS_RIGHTS', 'ListOfStr',
+		'hex(7):73,74,72,31,00,73,74,72,32,00,73,74,72,33,00,00'])
+	and $ini->exists(['SecondSection', 'Number', 'dword:0000007b'])) {
+	print "ok 16\n";
+} else { print "not ok 16\n"; }
+
+# test get/put
+if ($ini->put(['USERS_RIGHTS', 'Number', 9999]) == 123
+	and $ini->get(['USERS_RIGHTS', 'Number']) == 9999) {
+	print "ok 17\n";
+} else { print "not ok 17\n"; }
+
+do { $tmpfile = tmpnam() } until open TMPFILE, ">$tmpfile";
+$ini->save($tmpfile);
+
+# test decoder
+undef $ini;
+$ini = new IniFile($tmpfile);
+
+if ($ini->get(['USERS_RIGHTS', 'SzValue']) eq "MyString"
+	and $ini->get(['USERS_RIGHTS', 'Number']) == 9999
+	and $ini->get(['USERS_RIGHTS', 'BigNumber']) == 4294967295
+	and $ini->get(['USERS_RIGHTS', 'NotSoBigNumber']) == 2147483648
+	and join(',', $ini->get(['USERS_RIGHTS', 'ListOfNum']))
+		eq "1,2,3,4,5,6,7,8,9"
+	and join(',', $ini->get(['USERS_RIGHTS', 'ListOfStr']))
+		eq "str1,str2,str3"
+	and $ini->get(['SecondSection', 'Number']) == 123) {
+	print "ok 18\n";
+} else { print "not ok 18\n"; }
+
+unlink $tmpfile;
