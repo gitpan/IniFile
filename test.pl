@@ -46,6 +46,11 @@ File=System\\Niut.ini
 Caption=NIUT
 Version=121
 Requires=UnrealTournament
+
+[Engine.GameEngine]
+MasterServerAddress=unreal.epicgames.com MasterServerPort=27900
+ServerActors = IpServer.UdpServerUplinkMasterServerAddress=master0.gamespy.com MasterServerPort=27900
+ServerActors	=	IpServer.UdpServerUplinkMasterServerAddress=master.mplayer.com MasterServerPort = 27900
 EOT
 close TMPFILE;
 
@@ -174,6 +179,11 @@ Requires=UnrealTournament
 Old Version=100
 
 [NIUT]
+
+[Engine.GameEngine]
+MasterServerAddress=unreal.epicgames.com MasterServerPort=27900
+ServerActors=IpServer.UdpServerUplinkMasterServerAddress=master0.gamespy.com MasterServerPort=27900
+ServerActors=IpServer.UdpServerUplinkMasterServerAddress=master.mplayer.com MasterServerPort = 27900
 
 [NewMutator]
 Caption=The Great New Mutator

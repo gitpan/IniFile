@@ -45,7 +45,11 @@ For an .ini file to be recognized it must be of the following format:
 Sections must be separated from each other by an empty line (i.e. a
 newline on its own).  In our implementation the key must be no longer
 than 1024 characters, and contain no high-ASCII nor control character.
-On a line, everything after the semicolon is ignored.
+
+On a line, everything after the semicolon is ignored.  Spaces
+surrounding the delimiting equation sign are stripped.  If there are
+more than one equation sign on a line the first one is treated as the
+delimiter, the rest of them are considered part of the value.
 
 Specifcations of section, key and value are to be supplied to methods
 via an array reference containing just a section name, or the section
@@ -76,7 +80,7 @@ require AutoLoader;
     adjustfilecase
     adjustpathcase
 );
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 
 # Preloaded methods go here.
@@ -187,6 +191,9 @@ sub open {
 	# Strip comments.
 	s/;.*//;
 	next unless length;
+
+	# Strip spaces around first equation sign.
+	s/\s*=\s*/=/;
 
 	# Backslashes are allowed only in value part according to the MS-Windows
 	# API;  but we'll allow them anyway.
@@ -327,6 +334,9 @@ Depending on how many elements are specified in the array reference,
 retrieve the entire specified section or the values of the specified
 key.
 
+If nothing is specified the entire file is returned as a hash
+reference.
+
 If only a section name is specified the matching section is returned in
 its entirety as a hash reference.
 
@@ -350,6 +360,8 @@ with multivalued keys in an Unreal style .ini files.
 
 sub get {
     my ($self, $path, %args) = @_;
+
+    return $self->{sections} if (!defined $path);
 
     if ($self->exists($path)) {
 	my ($section, $key, $value) = @$path;
@@ -489,7 +501,7 @@ sub adjustfilecase {
 Return the properly cased and slashed pathname, unless running on a
 brain-damaged OS that is too dumb to handle pathnames in a modern,
 case-sensitive manner.  Each path components are inspected from left to
-right to see if an file or directory of the same name, in any case
+right to see if a file or directory of the same name, in any case
 combination, already exists.  If any match results the first match is
 used, otherwise the original path component is used verbatim.  No
 backtracking is performed, so if any path component in the middle fails

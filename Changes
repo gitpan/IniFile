@@ -1,5 +1,10 @@
 Revision history for Perl extension IniFile.
 
+1.01  Mon Jun 19 15:05:43 2000
+	Spaces surrounding first equation sign stripped.  Thanks to
+	    Shai Kfir <shaik@broadserve.com>.
+	Returns entire hash if get call has no param.
+
 1.00  Sun Mar 26 17:02:51 2000
 	Original version, created by h2xs 1.20.
 
