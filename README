@@ -2,8 +2,8 @@ IniFile
 =======
 
 This package provides easy access to the familiar MS-Windows style .ini
-files as well as the Unreal style extended .ini files, where multiple
-values can be associated with a single key.
+files, Unreal style extended .ini files (where multiple values can be
+associated with a single key), as well as registry files.
 
 For an .ini file to be recognized it must be of the following format:
 

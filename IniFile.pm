@@ -31,6 +31,10 @@ IniFile - Perl interface to MS-Windows style and Unreal style .ini files
 
     $ini->save;
 
+    # Save it in the registry file format
+    $ini->registry(1);
+    $ini->save('system.reg');
+
 =head1 DESCRIPTION
 
 This package provides easy access to the familiar MS-Windows style .ini
@@ -56,6 +60,13 @@ via an array reference containing just a section name, or the section
 name plus a key name, or the section name plus a key name with its
 associated value.
 
+If the first line of a file starts with "REGEDIT4" it will be treated
+as a registry file, which follows the same format described above,
+except that keys and values are expected to be enclosed in double
+quotes.  Invoking the B<save> method on such a file will have it saved
+in registry file format.  If this is not desirable the output mode can
+be forced by calling the B<registry> method.
+
 =head1 METHODS
 
 =over 4
@@ -80,7 +91,7 @@ require AutoLoader;
     adjustfilecase
     adjustpathcase
 );
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 
 # Preloaded methods go here.
@@ -134,6 +145,16 @@ sub open {
     return 1 if (!-e $file);
 
     open INIFILE, "<$file" or return 0;
+
+    $_ = <INIFILE>;			# read in the header line
+    if ($_ =~ '^REGEDIT4') {
+	$self->{registry} = 1;
+	$_ = <INIFILE>;			# skip the blank line that follows
+    } else {
+	# Rewind.
+	close INIFILE;
+	open INIFILE, "<$file" or return 0;
+    }
 
     $self->{lastpos} = 0;
     my $section;
@@ -204,6 +225,12 @@ sub open {
 
 	last if (!defined $key);
 
+	if ($self->{registry}) {
+	    # Strip the enclosing quotes off of registry entries.
+	    ($key) = ($key =~ /"*([^"]*)"*/);
+	    ($value) = ($value =~ /"*([^"]*)"*/);
+	}
+
 	# To allow for multi-valued keys, values are pushed into an array.
 	push @{ $self->{sections}->{$section}->{$key} }, $value;
 
@@ -243,11 +270,14 @@ sub save {
 
     CORE::open INIFILE, ">$file" or return 0;
 
+    print INIFILE "REGEDIT4\n\n" if ($self->{registry});
     foreach my $section (keys %{ $self->{sections} }) {
 	print INIFILE "[$section]\n";
 	my %hash = %{ $self->{sections}->{$section} };
 	foreach my $key (keys %{ $self->{sections}->{$section} }) {
-	    print INIFILE map "$key=$_\n", @{ $hash{$key} };
+	    my ($quote) = '"' if ($self->{registry});
+	    print INIFILE map "$quote$key$quote=$quote$_$quote\n",
+		@{ $hash{$key} };
 	}
 	print INIFILE "\n";
     }
@@ -287,13 +317,36 @@ the last line that conforms to the .ini format.
 =cut
 
 sub lastpos {
-    my ($self, $lastpos) = shift;
+    my ($self, $lastpos) = @_;
 
     if (defined $lastpos) {
 	$self->{lastpos} = $lastpos;
     }
 
     return $self->{lastpos};
+}
+
+# ----------------------------------------------------------------
+
+=item B<registry(self)>
+
+Set or retrieve the registry flag which determines whether the file is
+to be treated as a registry file or .ini file.  If this flag is true
+all subsequent file operations will work in registry file mode,
+otherwise the .ini mode is used.  Normally this flag need not be altered
+manually because it is automatically set to a value matching the format
+of the most recently read file.
+
+=cut
+
+sub registry {
+    my ($self, $registry) = @_;
+
+    if (defined $registry) {
+	$self->{registry} = $registry;
+    }
+
+    return $self->{registry};
 }
 
 # ----------------------------------------------------------------
