@@ -1,0 +1,24 @@
+IniFile
+=======
+
+This package provides easy access to the familiar MS-Windows style .ini
+files as well as the Unreal style extended .ini files, where multiple
+values can be associated with a single key.
+
+For an .ini file to be recognized it must be of the following format:
+
+    [section]
+    key=value           ; comments
+
+Sections must be separated from each other by an empty line (i.e. a
+newline on its own).  In our implementation the key must be no longer
+than 1024 characters, and contain no high-ASCII nor control character.
+On a line, everything after the semicolon is ignored.
+
+Specifcations of section, key and value are to be supplied to methods
+via an array reference containing just a section name, or the section
+name plus a key name, or the section name plus a key name with its
+associated value.
+
+-- 
+Avatar <avatar@deva.net>
